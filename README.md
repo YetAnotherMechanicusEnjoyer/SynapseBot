@@ -22,6 +22,9 @@
 > [!NOTE]
 > A Twitch App & Discord Bot that links Twich Chat with a Discord Channel
 
+> [!WARNING]
+> This is the JavaScript version. If you want to see the Rust version, check the [Main](https://github.com/YetAnotherMechanicusEnjoyer/SynapseBot/tree/main) or [Rust](https://github.com/YetAnotherMechanicusEnjoyer/SynapseBot/tree/rust) branches.
+
 ## Installation
 
 ### Dependencies
