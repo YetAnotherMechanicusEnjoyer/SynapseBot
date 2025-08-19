@@ -29,8 +29,9 @@ RUN apt-get update && \
 
 WORKDIR /app
 
-COPY --from=builder /app/ .
+COPY --from=builder /app/target/release/discord ./discord
+COPY --from=builder /app/config.json ./config.json
 
-RUN chmod +x ./target/release/discord
+RUN chmod +x ./discord
 
-CMD [ "./target/release/discord" ]
+CMD [ "./discord" ]
