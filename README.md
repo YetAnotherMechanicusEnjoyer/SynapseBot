@@ -1,7 +1,9 @@
 # Synapse Bot
 
 <p align="center">
-  <img src="./readme/example1.png" alt="Example 1"> <img src="./readme/example2.png" alt="Example 2">
+  <img src="./readme/example1.png" alt="Example 1">
+  <br>
+  <img src="./readme/example2.png" alt="Example 2">
 </p>
 
 ## Table of Content
