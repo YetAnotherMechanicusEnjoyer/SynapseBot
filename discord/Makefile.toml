@@ -2,3 +2,8 @@
 description = "Run unoptimized program"
 command = "cargo"
 args = ["watch", "-x", "run"]
+
+[tasks.launch]
+description = "Run optimized program"
+command = "cargo"
+args = ["watch", "-x", "run --release"]
