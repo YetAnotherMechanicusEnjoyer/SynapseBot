@@ -29,10 +29,18 @@ struct Handler;
 
 #[poise::async_trait]
 impl EventHandler for Handler {
+    async fn ready(&self, _ctx: serenity::Context, _data_about_bot: serenity::Ready) {
+        println!("Bot is ready!");
+    }
+
     async fn message(&self, ctx: serenity::Context, new_message: serenity::Message) {
         if new_message.author.id != ctx.cache.current_user().id {
-            events::message_create::message_create(new_message).await;
+            events::discord::message_create::message_create(new_message).await;
         }
+    }
+
+    async fn interaction_create(&self, ctx: serenity::Context, interaction: serenity::Interaction) {
+        events::discord::interaction_create::interaction_create(ctx, interaction).await;
     }
 }
 
