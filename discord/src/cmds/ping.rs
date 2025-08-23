@@ -6,7 +6,7 @@ use poise::{
 };
 
 /// Displays latency
-#[poise::command(slash_command, prefix_command, category = "Misc")]
+#[poise::command(slash_command, prefix_command, category = "Misc", broadcast_typing)]
 pub async fn ping(ctx: Context<'_>) -> Result<(), Error> {
     let gateway_latency = ctx.ping().await.as_millis();
 
