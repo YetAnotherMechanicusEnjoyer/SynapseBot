@@ -13,7 +13,7 @@ async fn autocomplete_commands(_ctx: Context<'_>, partial: &str) -> impl Iterato
 }
 
 /// Displays available commands
-#[poise::command(slash_command, prefix_command, category = "Help")]
+#[poise::command(slash_command, prefix_command, category = "Help", broadcast_typing)]
 pub async fn help(
     ctx: Context<'_>,
     #[autocomplete = "autocomplete_commands"]
