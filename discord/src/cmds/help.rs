@@ -4,11 +4,21 @@ use poise::{
     serenity_prelude::{self as serenity, CreateEmbed, CreateEmbedAuthor, CreateEmbedFooter},
 };
 
+async fn autocomplete_commands(_ctx: Context<'_>, partial: &str) -> impl Iterator<Item = String> {
+    let cmds = super::get_all_commands();
+
+    cmds.into_iter()
+        .filter(move |cmd| cmd.name.to_lowercase().starts_with(&partial.to_lowercase()))
+        .map(|cmd| cmd.name)
+}
+
 /// Displays available commands
 #[poise::command(slash_command, prefix_command, category = "Help")]
 pub async fn help(
     ctx: Context<'_>,
-    #[description = "More information about a specific command"] cmd: Option<String>,
+    #[autocomplete = "autocomplete_commands"]
+    #[description = "More information about a specific command"]
+    cmd: Option<String>,
 ) -> Result<(), Error> {
     let cmds = super::get_all_commands();
     let mut fields;
@@ -27,13 +37,10 @@ pub async fn help(
                 return Ok(());
             }
         };
-        let name = c.name.to_owned();
-        let desc = match c.description.to_owned() {
-            Some(d) => d,
-            None => "None".into(),
-        };
-        let guild = c.guild_only.to_owned();
-        let dm = c.dm_only.to_owned();
+        let name = c.name.as_str();
+        let desc = c.description.as_deref().unwrap_or("None");
+        let guild = c.guild_only;
+        let dm = c.dm_only;
 
         fields = vec![
             ("Name", format!("`{name}`"), false),
