@@ -95,29 +95,25 @@ pub async fn help(
         });
     }
 
-    let footer = ctx.invocation_string();
+    let bot_img = ctx
+        .framework()
+        .bot_id
+        .to_user(&ctx.http())
+        .await?
+        .avatar_url()
+        .unwrap_or("".into());
 
-    let bot = ctx.framework().bot_id.to_user(&ctx.http()).await?;
-    let bot_img = match bot.avatar_url() {
-        Some(str) => str,
-        None => "".into(),
-    };
-
-    let author = ctx.author().display_name();
-    let author_img = match ctx.author().avatar_url() {
-        Some(str) => str,
-        None => "".into(),
-    };
+    let author_img = ctx.author().avatar_url().unwrap_or("".into());
 
     let color = ctx.data().color;
 
     let mut embed = CreateEmbed::new()
         .title(title)
-        .author(CreateEmbedAuthor::new(author).icon_url(author_img.to_owned()))
+        .author(CreateEmbedAuthor::new(ctx.author().display_name()).icon_url(author_img.to_owned()))
         .thumbnail(bot_img.to_owned())
         .fields(fields)
         .color(serenity::Colour::from_rgb(color.0, color.1, color.2))
-        .footer(CreateEmbedFooter::new(footer).icon_url(bot_img.to_owned()))
+        .footer(CreateEmbedFooter::new(ctx.invocation_string()).icon_url(bot_img.to_owned()))
         .timestamp(chrono::Utc::now());
 
     if let Some(description) = description {
