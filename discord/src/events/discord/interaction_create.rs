@@ -1,120 +1,232 @@
 use poise::serenity_prelude::{
-    self as serenity, ActionRowComponent, ButtonKind, CreateActionRow, CreateButton, CreateEmbed,
-    CreateInteractionResponseMessage, Embed,
+    self as serenity, ButtonStyle, CreateActionRow, CreateButton, CreateEmbed,
+    CreateInteractionResponse, CreateInteractionResponseMessage, Interaction, ReactionType, User,
 };
 
-fn convert_embed_to_create_embed(embed: &Embed) -> CreateEmbed {
-    let mut create_embed = serenity::CreateEmbed::new();
+use crate::{Data, Error};
 
-    if let Some(author) = &embed.author {
-        let mut author_builder = serenity::CreateEmbedAuthor::new(&author.name);
-        if let Some(icon_url) = &author.icon_url {
-            author_builder = author_builder.icon_url(icon_url.clone());
-        }
-        if let Some(url) = &author.url {
-            author_builder = author_builder.url(url.clone());
-        }
-        create_embed = create_embed.author(author_builder);
-    }
+fn create_combat_ui(turn_user: &User) -> Vec<CreateActionRow> {
+    let attack_button = CreateButton::new("attack_action")
+        .style(ButtonStyle::Primary)
+        .label("Attack!")
+        .emoji(ReactionType::Unicode("⚔️".to_string()))
+        .disabled(false);
 
-    if let Some(color) = embed.colour {
-        create_embed = create_embed.color(color);
-    }
+    let disabled_button = CreateButton::new("wait_turn")
+        .style(ButtonStyle::Secondary)
+        .label(format!("Waiting for {}...", turn_user.name))
+        .disabled(true);
 
-    if let Some(description) = &embed.description {
-        create_embed = create_embed.description(description);
-    }
+    let buttons = vec![attack_button, disabled_button];
 
-    if let Some(footer) = &embed.footer {
-        let mut footer_builder = serenity::CreateEmbedFooter::new(&footer.text);
-        if let Some(icon_url) = &footer.icon_url {
-            footer_builder = footer_builder.icon_url(icon_url.clone());
-        }
-        create_embed = create_embed.footer(footer_builder);
-    }
-
-    if let Some(image) = &embed.image {
-        create_embed = create_embed.image(image.url.clone());
-    }
-
-    if let Some(timestamp) = &embed.timestamp {
-        create_embed = create_embed.timestamp(timestamp);
-    }
-
-    if let Some(thumbnail) = &embed.thumbnail {
-        create_embed = create_embed.thumbnail(thumbnail.url.clone());
-    }
-
-    if let Some(title) = &embed.title {
-        create_embed = create_embed.title(title);
-    }
-
-    if let Some(url) = &embed.url {
-        create_embed = create_embed.url(url);
-    }
-
-    let fields_vec: Vec<_> = embed
-        .fields
-        .iter()
-        .map(|field| (field.name.clone(), field.value.clone(), field.inline))
-        .collect();
-
-    create_embed = create_embed.fields(fields_vec);
-
-    create_embed
+    vec![CreateActionRow::Buttons(buttons)]
 }
 
-pub async fn interaction_create(ctx: serenity::Context, interaction: serenity::Interaction) {
+pub async fn interaction_create(
+    ctx: &serenity::Context,
+    interaction: Interaction,
+    framework: poise::FrameworkContext<'_, Data, Error>,
+    _data: &Data,
+) -> Result<(), Error> {
     if let serenity::Interaction::Component(component) = interaction {
-        let parts: Vec<&str> = component.data.custom_id.split('|').collect();
-        if parts[0] == "Accept" || parts[0] == "Cancel" {
-            println!("{}", parts[0]);
-            let user_id = parts[1];
-            let click_id = component.user.id.to_string();
+        let mut data = framework.user_data().await.active_duels.lock().await;
 
-            let embeds = component
-                .message
-                .embeds
-                .iter()
-                .map(convert_embed_to_create_embed)
-                .collect();
+        let game_state_option = data.get(&component.message.id).cloned();
 
-            let new_components: Vec<CreateActionRow> = component
-                .message
-                .components
-                .iter()
-                .map(|action_row| {
-                    let mut new_buttons = Vec::new();
-                    for inner_component in &action_row.components {
-                        if let ActionRowComponent::Button(button) = inner_component
-                            && let ButtonKind::NonLink { custom_id, style } = &button.data
-                        {
-                            new_buttons.push(
-                                CreateButton::new(custom_id.clone())
-                                    .label(button.label.clone().unwrap())
-                                    .style(style.to_owned())
-                                    .emoji(button.emoji.clone().unwrap())
-                                    .disabled(true),
-                            );
-                        }
+        if let Some(mut game_state) = game_state_option {
+            match component.data.custom_id.as_str() {
+                "accept_duel" => {
+                    if component.user.id != game_state.player2_id {
+                        component
+                            .create_response(
+                                &ctx,
+                                CreateInteractionResponse::Message(
+                                    CreateInteractionResponseMessage::new()
+                                        .content("This duel challenge is not for you!")
+                                        .ephemeral(true),
+                                ),
+                            )
+                            .await
+                            .ok();
+                        return Ok(());
                     }
-                    CreateActionRow::Buttons(new_buttons)
-                })
-                .collect::<Vec<_>>();
 
-            if user_id == click_id {
-                component
-                    .create_response(
-                        &ctx,
-                        serenity::CreateInteractionResponse::UpdateMessage(
-                            CreateInteractionResponseMessage::new()
-                                .embeds(embeds)
-                                .components(new_components),
-                        ),
-                    )
-                    .await
-                    .expect("Failed to create response");
+                    let p1_user = game_state.player1_id.to_user(&ctx).await.unwrap();
+                    let p2_user = game_state.player2_id.to_user(&ctx).await.unwrap();
+                    let new_embed = CreateEmbed::new()
+                        .title("Duel Started!")
+                        .description(format!(
+                            "{p1_user} vs {p2_user}\n\nIt is {p1_user}'s turn to attack!",
+                        ))
+                        .field(
+                            format!("{}`s HP", p1_user.name),
+                            game_state.player1_hp.to_string(),
+                            true,
+                        )
+                        .field(
+                            format!("{}`s HP", p2_user.name),
+                            game_state.player2_hp.to_string(),
+                            true,
+                        );
+
+                    let components = create_combat_ui(&p1_user);
+
+                    component
+                        .create_response(
+                            &ctx,
+                            CreateInteractionResponse::UpdateMessage(
+                                CreateInteractionResponseMessage::new()
+                                    .embeds(vec![new_embed])
+                                    .components(components),
+                            ),
+                        )
+                        .await
+                        .ok();
+                }
+                "cancel_duel" => {
+                    if component.user.id != game_state.player1_id
+                        && component.user.id != game_state.player2_id
+                    {
+                        component
+                            .create_response(
+                                &ctx,
+                                CreateInteractionResponse::Message(
+                                    CreateInteractionResponseMessage::new()
+                                        .content("This duel challenge is not for you!")
+                                        .ephemeral(true),
+                                ),
+                            )
+                            .await
+                            .ok();
+                        return Ok(());
+                    }
+
+                    data.remove(&component.message.id);
+                    let new_embed = CreateEmbed::new()
+                        .title("Duel Cancelled")
+                        .description("The duel has been cancelled.");
+
+                    component
+                        .create_response(
+                            &ctx,
+                            CreateInteractionResponse::UpdateMessage(
+                                CreateInteractionResponseMessage::new()
+                                    .embeds(vec![new_embed])
+                                    .components(vec![]),
+                            ),
+                        )
+                        .await
+                        .ok();
+                }
+                "attack_action" => {
+                    if component.user.id != game_state.turn {
+                        component
+                            .create_response(
+                                &ctx,
+                                CreateInteractionResponse::Message(
+                                    CreateInteractionResponseMessage::new()
+                                        .content("It's not your turn!")
+                                        .ephemeral(true),
+                                ),
+                            )
+                            .await
+                            .ok();
+                        return Ok(());
+                    }
+
+                    let (_attacker_id, defender_id) = if component.user.id == game_state.player1_id
+                    {
+                        (game_state.player1_id, game_state.player2_id)
+                    } else {
+                        (game_state.player2_id, game_state.player1_id)
+                    };
+
+                    let damage = 10;
+
+                    if defender_id == game_state.player1_id {
+                        game_state.player1_hp = game_state.player1_hp.saturating_sub(damage);
+                    } else {
+                        game_state.player2_hp = game_state.player2_hp.saturating_sub(damage);
+                    }
+
+                    let winner = if game_state.player1_hp == 0 {
+                        Some(game_state.player2_id)
+                    } else if game_state.player2_hp == 0 {
+                        Some(game_state.player1_id)
+                    } else {
+                        None
+                    };
+
+                    let next_turn = if game_state.turn == game_state.player1_id {
+                        game_state.player2_id
+                    } else {
+                        game_state.player1_id
+                    };
+                    game_state.turn = next_turn;
+
+                    let p1_user = game_state.player1_id.to_user(&ctx).await.unwrap();
+                    let p2_user = game_state.player2_id.to_user(&ctx).await.unwrap();
+
+                    let description = if let Some(winner_id) = winner {
+                        let winner_user = winner_id.to_user(&ctx).await.unwrap();
+                        format!(
+                            "{} defeated {}!",
+                            winner_user,
+                            if winner_id == p1_user.id {
+                                p2_user.clone()
+                            } else {
+                                p1_user.clone()
+                            }
+                        )
+                    } else {
+                        format!(
+                            "{} attacked {} for {} damage! It is now {}'s turn.",
+                            component.user,
+                            next_turn.to_user(&ctx).await.unwrap(),
+                            damage,
+                            next_turn.to_user(&ctx).await.unwrap()
+                        )
+                    };
+
+                    let new_embed = CreateEmbed::new()
+                        .title("Duel in Progress")
+                        .description(description)
+                        .field(
+                            format!("{}`s HP", p1_user.name),
+                            game_state.player1_hp.to_string(),
+                            true,
+                        )
+                        .field(
+                            format!("{}`s HP", p2_user.name),
+                            game_state.player2_hp.to_string(),
+                            true,
+                        );
+
+                    let components = if winner.is_some() {
+                        data.remove(&component.message.id);
+                        vec![]
+                    } else {
+                        let next_user = next_turn.to_user(&ctx).await.unwrap();
+                        create_combat_ui(&next_user)
+                    };
+
+                    data.insert(component.message.id, game_state);
+
+                    component
+                        .create_response(
+                            &ctx,
+                            CreateInteractionResponse::UpdateMessage(
+                                CreateInteractionResponseMessage::new()
+                                    .embeds(vec![new_embed])
+                                    .components(components),
+                            ),
+                        )
+                        .await
+                        .ok();
+                }
+                _ => {}
             }
         }
     }
+    Ok(())
 }
