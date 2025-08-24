@@ -1,12 +1,23 @@
-use poise::serenity_prelude::{self as serenity, EventHandler};
+use poise::serenity_prelude::{self as serenity, EventHandler, UserId};
 use serde::Deserialize;
-use std::{env, fs, path::Path};
+use std::{collections::HashMap, env, fs, path::Path, sync::Arc};
+use tokio::sync::Mutex;
 
 mod cmds;
 mod events;
 
+#[derive(Debug, Clone)]
+struct GameState {
+    player1_id: UserId,
+    player2_id: UserId,
+    player1_hp: u32,
+    player2_hp: u32,
+    turn: UserId,
+}
+
 pub struct Data {
     color: (u8, u8, u8),
+    active_duels: Arc<Mutex<HashMap<serenity::MessageId, GameState>>>,
 }
 
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
@@ -38,10 +49,24 @@ impl EventHandler for Handler {
             events::discord::message_create::message_create(new_message).await;
         }
     }
+}
 
-    async fn interaction_create(&self, ctx: serenity::Context, interaction: serenity::Interaction) {
-        events::discord::interaction_create::interaction_create(ctx, interaction).await;
+async fn event_handler(
+    ctx: &serenity::Context,
+    event: &serenity::FullEvent,
+    framework: poise::FrameworkContext<'_, Data, Error>,
+    _data: &Data,
+) -> Result<(), Error> {
+    if let serenity::FullEvent::InteractionCreate { interaction } = event {
+        events::discord::interaction_create::interaction_create(
+            ctx,
+            interaction.clone(),
+            framework,
+            _data,
+        )
+        .await?;
     }
+    Ok(())
 }
 
 #[tokio::main]
@@ -67,12 +92,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>
                 prefix: Some(config.discord_prefix),
                 ..Default::default()
             },
+            event_handler: |ctx, event, framework, data| {
+                Box::pin(event_handler(ctx, event, framework, data))
+            },
             ..Default::default()
         })
         .setup(move |ctx, _ready, framework| {
             Box::pin(async move {
                 poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                Ok(Data { color })
+                Ok(Data {
+                    color,
+                    active_duels: Arc::new(Mutex::new(HashMap::new())),
+                })
             })
         })
         .build();
