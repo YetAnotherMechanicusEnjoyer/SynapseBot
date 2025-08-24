@@ -1,6 +1,7 @@
 use poise::serenity_prelude::{
     self as serenity, ButtonStyle, CreateActionRow, CreateButton, CreateEmbed,
-    CreateInteractionResponse, CreateInteractionResponseMessage, Interaction, ReactionType, User,
+    CreateInteractionResponse, CreateInteractionResponseMessage, EmojiId, Interaction,
+    ReactionType, User,
 };
 
 use crate::{Data, Error};
@@ -15,6 +16,11 @@ fn create_combat_ui(turn_user: &User) -> Vec<CreateActionRow> {
     let disabled_button = CreateButton::new("wait_turn")
         .style(ButtonStyle::Secondary)
         .label(format!("Waiting for {}...", turn_user.name))
+        .emoji(ReactionType::Custom {
+            animated: true,
+            id: EmojiId::new(983173429224157254),
+            name: None,
+        })
         .disabled(true);
 
     let buttons = vec![attack_button, disabled_button];
