@@ -1,5 +1,7 @@
 name: Node.js CI
 
+run-name: Node.js CI | ${{ github.event_name }} by ${{ github.actor }} on '${{ github.ref_name }}'
+
 on:
   push:
   pull_request:

@@ -1,5 +1,7 @@
 name: Rust CI
 
+run-name: Rust CI | ${{ github.event_name }} by ${{ github.actor }} on '${{ github.ref_name }}'
+
 on:
   push:
   pull_request:

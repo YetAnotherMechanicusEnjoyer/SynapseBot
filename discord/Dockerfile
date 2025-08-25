@@ -1,4 +1,4 @@
-FROM rust:slim-bookworm AS builder
+FROM rust:1.88.0-slim-bookworm AS builder
 
 WORKDIR /app
 
@@ -20,7 +20,7 @@ COPY . .
 
 RUN cargo build --release --locked
 
-FROM rust:slim-bookworm
+FROM rust:1.88.0-slim-bookworm
 
 RUN apt-get update && \
   apt-get install -y \

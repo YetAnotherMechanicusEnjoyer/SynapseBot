@@ -14,6 +14,7 @@ services:
     build:
       context: ./discord
       dockerfile: Dockerfile
+    image: synapsebot/discord_bot:latest
     container_name: synapse_discord_bot
     restart: on-failure
     depends_on:
@@ -27,6 +28,7 @@ services:
     build:
       context: ./twitch
       dockerfile: Dockerfile
+    image: synapsebot/twitch_app:latest
     container_name: synapse_twitch_app
     restart: on-failure
     depends_on:
