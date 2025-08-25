@@ -32,10 +32,10 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-      - name: Compile Discord Dependencies
+      - name: Generate Cargo.lock
         run: |
           cd discord/
-          cargo build --release
+          cargo generate-lockfile
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
