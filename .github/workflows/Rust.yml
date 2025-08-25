@@ -38,6 +38,7 @@ jobs:
         with:
           command: "check bans sources"
           manifest-path: "./discord/Cargo.toml"
+          rust-version: "1.88.0"
 
       - name: Pre-build project
         run: cargo build
