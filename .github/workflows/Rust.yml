@@ -31,13 +31,17 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-          components: clippy
+          components: clippy, rustfmt
 
-      - name: Install cargo-audit
-        run: cargo install cargo-audit
+      - name: Run cargo-deny checks
+        uses: EmbarkStudios/cargo-deny-action@v1
+        with:
+          command: "check bans sources"
+          manifest-path: "./discord/Cargo.toml"
+          rust-version: "1.88.0"
 
-      - name: Check for vulnerabilites
-        run: cargo audit
+      - name: Pre-build project
+        run: cargo build
 
       - name: Check formatting
         run: cargo fmt --check
