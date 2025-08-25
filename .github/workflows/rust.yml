@@ -1,5 +1,7 @@
 name: Rust CI
 
+run-name: Rust CI | ${{ github.event_name == 'push' && github.event.head_commit.message || github.event_name == 'pull_request' && github.event.pull_request.title }} by @{{ github.actor }} on ${{ github.ref_name }}
+
 on:
   push:
   pull_request:
