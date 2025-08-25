@@ -33,14 +33,11 @@ jobs:
           toolchain: stable
           components: clippy
 
-      - name: Install cargo-audit
-        run: cargo install cargo-audit
+      - name: Check for vulnerabilities
+        uses: rustsec/audit-check@v1
 
       - name: Pre-build project
         run: cargo build
-
-      - name: Check for vulnerabilites
-        run: cargo audit
 
       - name: Check formatting
         run: cargo fmt --check
