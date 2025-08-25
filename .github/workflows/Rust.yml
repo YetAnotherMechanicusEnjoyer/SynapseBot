@@ -31,7 +31,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           toolchain: stable
-          components: clippy
+          components: clippy, rustfmt
 
       - name: Check for vulnerabilities
         uses: rustsec/audit-check@v1
