@@ -37,6 +37,7 @@ jobs:
         uses: EmbarkStudios/cargo-deny-action@v1
         with:
           command: "check bans sources"
+          manifest-path: "./discord/Cargo.toml"
 
       - name: Pre-build project
         run: cargo build
