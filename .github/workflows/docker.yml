@@ -12,6 +12,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Create .env file from secret
+        run: echo "${{ secrets.PROD_ENV_FILE }}" > .env
+
       - name: Install Docker Compose
         run: |
           sudo apt-get update
