@@ -35,6 +35,8 @@ jobs:
 
       - name: Check for vulnerabilities
         uses: rustsec/audit-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Pre-build project
         run: cargo build
