@@ -33,10 +33,10 @@ jobs:
           toolchain: stable
           components: clippy, rustfmt
 
-      - name: Check for vulnerabilities
-        uses: rustsec/audit-check@v1
+      - name: Run cargo-deny checks
+        uses: EmbarkStudios/cargo-deny-action@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          command: "check bans sources"
 
       - name: Pre-build project
         run: cargo build
