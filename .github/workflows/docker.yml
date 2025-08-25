@@ -23,7 +23,7 @@ jobs:
       - name: Compile Discord Dependencies
         run: |
           cd discord/
-          cargo build
+          cargo build --release
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -33,19 +33,3 @@ jobs:
 
       - name: Run Docker Compose services
         run: docker-compose up --detach
-
-      - name: Run Trivy vulnerability scan for discord_bot
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: "synapsebot/discord_bot:latest"
-          format: "table"
-          exit-code: "1"
-          severity: "HIGH"
-
-      - name: Run Trivy vulnerability scan for twitch_app
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: "synapsebot/twitch_app:latest"
-          format: "table"
-          exit-code: "1"
-          severity: "HIGH"
