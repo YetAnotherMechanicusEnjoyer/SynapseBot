@@ -37,7 +37,7 @@ jobs:
       - name: Run Trivy vulnerability scan for discord_bot
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "discord_bot"
+          image-ref: "synapsebot/discord_bot:latest"
           format: "table"
           exit-code: "1"
           severity: "HIGH"
@@ -45,7 +45,7 @@ jobs:
       - name: Run Trivy vulnerability scan for twitch_app
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: "twitch_app"
+          image-ref: "synapsebot/twitch_app:latest"
           format: "table"
           exit-code: "1"
           severity: "HIGH"
