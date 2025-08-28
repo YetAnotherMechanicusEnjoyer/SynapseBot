@@ -18,16 +18,19 @@ jobs:
         working-directory: ./twitch
     steps:
       - uses: actions/checkout@v4
-      - name: Install Dependencies
-        run: npm install
+
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
           cache: "npm"
-          cache-dependency-path: "./twitch/package-lock.json"
-      - run: npm ci
+          cache-dependency-path: "./twitch/package.json"
+
+      - name: Install Dependencies
+        run: npm install
+
       - name: Check for Build
         run: npm run build --if-present
+
       - name: Run Tests
         run: npm test

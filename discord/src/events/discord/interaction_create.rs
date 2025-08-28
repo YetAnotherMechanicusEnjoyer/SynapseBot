@@ -1,5 +1,5 @@
 use poise::serenity_prelude::{
-    self as serenity, ButtonStyle, CreateActionRow, CreateButton, CreateEmbed,
+    self as serenity, ButtonStyle, Colour, CreateActionRow, CreateButton, CreateEmbed,
     CreateInteractionResponse, CreateInteractionResponseMessage, EmojiId, Interaction,
     ReactionType, User,
 };
@@ -206,7 +206,8 @@ pub async fn interaction_create(
                             format!("{}`s HP", p2_user.name),
                             game_state.player2_hp.to_string(),
                             true,
-                        );
+                        )
+                        .color(Colour::from_rgb(0, 100, 255));
 
                     let components = if winner.is_some() {
                         data.remove(&component.message.id);
